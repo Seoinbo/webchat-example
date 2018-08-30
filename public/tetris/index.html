@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Tetris game in HTML5</title>
+  <meta name="description" content="the classic Tetris game" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui" />
+  <link rel="shortcut icon" href="assets/images/favicon.png">
+  <link href='http://fonts.googleapis.com/css?family=Play:400,700' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="srv/blockrain.css">
+  <script src="assets/js/jquery-1.11.1.min.js"></script>
+  <script src="src/blockrain.jquery.libs.js"></script>
+  <script src="src/blockrain.jquery.src.js"></script>
+  <script src="src/blockrain.jquery.themes.js"></script>
+</head>
+<style>
+    .play-ground {
+        width: 100%;
+        height: 100%;
+    }
+    .frame {
+        margin-left: 15px;
+    }
+    .board {
+        width: 300px;
+        height: 600px;
+    }
+</style>
+<body>
+<section class="play-ground">
+    <div class="frame">
+        <div class="board" id="tetris1"></div>
+    </div>
+</section>
+<script>
+var versusSpeed = 20;
+var $Tetris1 = $('#tetris1').blockrain({
+    autoplay: false,
+    autoplayRestart: true,
+    speed: versusSpeed,
+    blockWidth: 10,
+    theme: 'retro',
+    onGameOver: function() {
+        alert("game over");
+    }
+});
+</script>
+</body>
+</html>
