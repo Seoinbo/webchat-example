@@ -605,7 +605,7 @@
         },
         shift: function(count = 1) {
           for (var i = 0; i < game._BLOCK_WIDTH * game._BLOCK_HEIGHT; i++) {
-            var dest = i - game._BLOCK_WIDTH;
+            var dest = i - (game._BLOCK_WIDTH * 2);
             if (this.data[i] && this.data[i].blockIndex !== null) {
               this.data[dest] = {
                 blockType: this.data[i].blockType, 

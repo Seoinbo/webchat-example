@@ -45,6 +45,22 @@ var $Tetris1 = $('#tetris1').blockrain({
         alert("game over");
     }
 });
+
+/*****************************************
+ *     NETWORK
+ * **************************************/
+
+var ws = connect();
+
+ws.onopen = function() {
+    ws.send("connected!");
+    console.log("connected!");
+};
+
+function connect() {
+    var ws = new WebSocket("ws://172.20.103.42:8008");
+    return ws;
+}
 </script>
 </body>
 </html>
