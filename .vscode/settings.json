@@ -5,7 +5,9 @@
         "array": "cpp",
         "string_view": "cpp",
         "cstdlib": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "exception": "cpp",
+        "bitset": "cpp"
     },
     "C_Cpp.errorSquiggles": "Enabled"
 }

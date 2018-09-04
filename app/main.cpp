@@ -1,52 +1,116 @@
-#include <boost/beast/core.hpp>
-#include <boost/beast/websocket.hpp>
-#include <boost/asio/ip/tcp.hpp>
+//
+// async_tcp_echo_server.cpp
+// ~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+
 #include <cstdlib>
-#include <functional>
 #include <iostream>
-#include <string>
-#include <thread>
+#include <memory>
+#include <utility>
+#include <boost/asio.hpp>
 
-using tcp = boost::asio::ip::tcp;
-namespace websocket = boost::beast::websocket;
+using boost::asio::ip::tcp;
 
-int main(int argc, char* argv[]) {
-    try {
-        // Check command line arguments.
-        if (argc != 3)
+class session
+  : public std::enable_shared_from_this<session>
+{
+public:
+  session(tcp::socket socket)
+    : socket_(std::move(socket))
+  {
+  }
+
+  void start()
+  {
+    do_read();
+  }
+
+private:
+  void do_read()
+  {
+    auto self(shared_from_this());
+    socket_.async_read_some(boost::asio::buffer(data_, max_length),
+        [this, self](boost::system::error_code ec, std::size_t length)
         {
-            std::cerr <<
-                "Usage: chatserver <address> <port>\n" <<
-                "Example:\n" <<
-                "    websocket-server-sync 0.0.0.0 8080\n";
-            return EXIT_FAILURE;
-        }
+          if (!ec)
+          {
+            do_write(length);
+          }
+        });
+  }
 
-        auto const address = boost::asio::ip::make_address(argv[1]);
-        auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
-
-        // The io_context is required for all I/O, thread count
-        boost::asio::io_context ioc{1};
-        
-        // The acceptor receives incoming connections
-        tcp::acceptor acceptor{ioc, {address, port}};
-        for(;;)
+  void do_write(std::size_t length)
+  {
+    auto self(shared_from_this());
+    boost::asio::async_write(socket_, boost::asio::buffer(data_, length),
+        [this, self](boost::system::error_code ec, std::size_t /*length*/)
         {
-            // This will receive the new connection
-            tcp::socket socket{ioc};
+          if (!ec)
+          {
+            do_read();
+          }
+        });
+  }
 
-            // Block until we get a connection
-            acceptor.accept(socket);
+  tcp::socket socket_;
+  enum { max_length = 1024 };
+  char data_[max_length];
+};
 
-            // Launch the session, transferring ownership of the socket
-            std::thread{std::bind(
-                &do_session,
-                std::move(socket))}.detach();
-        }
-    }
-    catch (const std::exception& e)
+class server
+{
+public:
+  server(boost::asio::io_service& io_service, short port)
+    : acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
+      socket_(io_service)
+  {
+    do_accept();
+  }
+
+private:
+  void do_accept()
+  {
+    acceptor_.async_accept(socket_,
+        [this](boost::system::error_code ec)
+        {
+          if (!ec)
+          {
+            std::make_shared<session>(std::move(socket_))->start();
+          }
+
+          do_accept();
+        });
+  }
+
+  tcp::acceptor acceptor_;
+  tcp::socket socket_;
+};
+
+int main(int argc, char* argv[])
+{
+  try
+  {
+    if (argc != 2)
     {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
+      std::cerr << "Usage: async_tcp_echo_server <port>\n";
+      return 1;
     }
+
+    boost::asio::io_service io_service;
+
+    server s(io_service, std::atoi(argv[1]));
+
+    io_service.run();
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << "Exception: " << e.what() << "\n";
+  }
+
+  return 0;
 }
